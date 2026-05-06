@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analog Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap');
+
+        body {
+            background-color: #050505;
+            color: white;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* View Management with Fades */
+        .view {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+        }
+
+        .view.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Simplified Static Media */
+        .media-item {
+            filter: contrast(1.1);
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .media-item:hover {
+            opacity: 0.8;
+        }
+
+        /* Custom Back Button */
+        .back-btn {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: opacity 0.3s ease;
+        }
+
+        /* Audio Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 1px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #fff;
+            transition: width 0.1s linear;
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Global Audio Element -->
+    <audio id="main-audio"></audio>
+
+    <div id="back-button" class="back-btn opacity-0 pointer-events-none" onclick="showView('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="home" class="view active min-h-screen flex flex-col items-center justify-center">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-32 items-center">
+            <img src="walkman.png" class="media-item w-64 h-auto" onclick="showView('singles')" alt="Singles">
+            <img src="turntable.png" class="media-item w-80 h-auto" onclick="showView('albums')" alt="Albums">
+            <img src="cd-walkman.png" class="media-item w-72 h-auto" onclick="showView('others')" alt="Others">
+        </div>
+    </div>
+
+    <!-- SINGLES VIEW (CASSETTES) -->
+    <div id="singles" class="view min-h-screen items-center justify-center">
+        <div class="grid grid-cols-2 gap-16">
+            <img src="cassette1.png" class="media-item w-64" onclick="playMusic('YOUR_GITHUB_LINK_1')">
+            <img src="cassette2.png" class="media-item w-64" onclick="playMusic('YOUR_GITHUB_LINK_2')">
+            <img src="cassette3.png" class="media-item w-64" onclick="playMusic('YOUR_GITHUB_LINK_3')">
+            <img src="cassette4.png" class="media-item w-64" onclick="playMusic('YOUR_GITHUB_LINK_4')">
+        </div>
+    </div>
+
+    <!-- ALBUMS VIEW (VINYL) -->
+    <div id="albums" class="view min-h-screen items-center justify-center">
+        <img src="vinyl.png" class="media-item w-[450px] h-[450px] rounded-full" onclick="playMusic('YOUR_GITHUB_LINK_ALBUM')">
+    </div>
+
+    <!-- OTHERS VIEW (CDs) -->
+    <div id="others" class="view min-h-screen items-center justify-center space-x-24">
+        <img src="cd-mini.png" class="media-item w-44 rounded-full" onclick="playMusic('YOUR_GITHUB_LINK_CD1')">
+        <img src="cd-full.png" class="media-item w-80 rounded-full" onclick="playMusic('YOUR_GITHUB_LINK_CD2')">
+    </div>
+
+    <!-- Minimal Progress Indicator -->
+    <div id="audio-ui" class="progress-container opacity-0 transition-opacity duration-700">
+        <div id="progress-bar"></div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('main-audio');
+        const progressBar = document.getElementById('progress-bar');
+        const audioUI = document.getElementById('audio-ui');
+        const backBtn = document.getElementById('back-button');
+
+        function showView(viewId) {
+            const currentView = document.querySelector('.view.active');
+            
+            // Start Fade Out
+            if (currentView) {
+                currentView.style.opacity = '0';
+                
+                setTimeout(() => {
+                    currentView.classList.remove('active');
+                    currentView.style.display = 'none';
+
+                    // Prepare Next View
+                    const nextView = document.getElementById(viewId);
+                    nextView.style.display = 'flex';
+                    
+                    // Force reflow for transition
+                    void nextView.offsetWidth;
+                    
+                    nextView.classList.add('active');
+                    nextView.style.opacity = '1';
+
+                    // Toggle Back Button
+                    if (viewId === 'home') {
+                        backBtn.classList.add('opacity-0', 'pointer-events-none');
+                    } else {
+                        backBtn.classList.remove('opacity-0', 'pointer-events-none');
+                    }
+                }, 600); // Matches the CSS transition time
+            }
+        }
+
+        function playMusic(url) {
+            if (audio.src.includes(url) && !audio.paused) {
+                audio.pause();
+                audioUI.classList.add('opacity-0');
+                return;
+            }
+
+            audio.src = url;
+            audio.play().catch(e => console.error("URL needed:", url));
+            audioUI.classList.remove('opacity-0');
+        }
+
+        audio.ontimeupdate = () => {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = progress + "%";
+        };
+
+        audio.onended = () => {
+            audioUI.classList.add('opacity-0');
+        };
+    </script>
+</body>
+</html>
